@@ -24,7 +24,8 @@
 int solve_linear_equation(double a, double b, double *x)
 {
     assert(!isnan(a) && !isnan(b));
-    assert(x != NULL);
+    assert(!isinf(a) && !isinf(b));
+    assert(x);
 
     if (a == 0)
     {
@@ -46,15 +47,16 @@ int solve_linear_equation(double a, double b, double *x)
  * @param a First parameter
  * @param b Second parameter
  * @param c Third parameter
- * @param x1 Pointer to a place with the first root
- * @param x2 Pointer to a place with the second root
+ * @param x1 Pointer to a place with the first root, or the real part of roots
+ * @param x2 Pointer to a place with the second root, or the imaginary part of roots
  * @param flag Flag indicating whether to calculate complex roots
  * @return int Number of roots
  */
 int solve_square_equation(double a, double b, double c, double *x1, double *x2, int flag)
 {
     assert(!isnan(a) && !isnan(b) && !isnan(c));
-    assert(x1 != NULL && x2 != NULL);
+    assert(!isinf(a) && !isinf(b) && !isinf(c));
+    assert(x1 && x2);
     assert(x1 != x2);
 
     if (a == 0) 

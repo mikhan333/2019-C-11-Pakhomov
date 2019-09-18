@@ -16,6 +16,7 @@
 
 #define EPSILON 1e-2
 #define CHECK_EQUAL(a, b) ((((b)-EPSILON < (a)) && ((b) + EPSILON > (a))) ? True : False)
+// #define PRINT_SQUARE(a, b, c, nRoots, x1, x2, test_nRoots, test_x1, text_x2) printf("")
 
 /**
  * @brief Assert func for solve_square_equation
@@ -37,6 +38,7 @@ void assert_square(double a, double b, double c, int test_nRoots, double test_x1
     int nRoots = solve_square_equation(a, b, c, &x1, &x2, flag);
     if (nRoots != test_nRoots)
     {
+        //TODO: send it in macros
         printf("ERROR_NUMBER_ROOTS : assert_square()\n"
                "a=%lf, b=%lf, c=%lf, test_x1=%lf, test_x2=%lf\n"
                "count of roots=%d, test count=%d\n\n",
@@ -71,7 +73,7 @@ void assert_square(double a, double b, double c, int test_nRoots, double test_x1
 
 /**
  * @brief Test input of square  function
- * 
+ * TODO: add some tests here
  */
 void test_square_input()
 {

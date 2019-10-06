@@ -30,14 +30,14 @@ int solve_linear_equation(double a, double b, double *x)
     if (a == 0)
     {
         if (b == 0)
-            return NROOTS_INFINITY;
+            return INFINITY_ROOTS;
         else // if (b != 0)
-            return 0;
+            return ZERO_ROOTS;
     }
     else // if (a != 0)
     {
         *x = -b / a;
-        return 1;
+        return ONE_ROOT;
     }
 }
 
@@ -59,19 +59,19 @@ int solve_square_equation(double a, double b, double c, double *x1, double *x2, 
     assert(x1 && x2);
     assert(x1 != x2);
 
-    if (a == 0) 
+    if (a == 0)
     {
         return solve_linear_equation(b, c, x1);
     }
     else // if (a != 0)
     {
-        if (c == 0) 
+        if (c == 0)
         {
             *x1 = 0;
             if (b == 0)
-                return 1;
+                return ONE_ROOT;
             else
-                return 1 + solve_linear_equation(a, b, x2); // a != 0, b != 0
+                return ONE_ROOT + solve_linear_equation(a, b, x2); // a != 0, b != 0
         }
         else // if (c != 0)
         {
@@ -84,18 +84,17 @@ int solve_square_equation(double a, double b, double c, double *x1, double *x2, 
                     double denominator = 2 * a;
                     *x1 = -b / denominator;
                     *x2 = sqrt_D / denominator;
-                    return -2; 
+                    return COMPLEX_ROOTS;
                 }
                 else // if (!flag)
                 {
-                    return 0;
+                    return ZERO_ROOTS;
                 }
-                
             }
             else if (fabs(D) <= ZERO_EPSILON)
             {
                 *x1 = -b / 2 * a;
-                return 1;
+                return ONE_ROOT;
             }
             else // if (D > 0)
             {
@@ -103,7 +102,7 @@ int solve_square_equation(double a, double b, double c, double *x1, double *x2, 
                 double denominator = 2 * a;
                 *x1 = (-b + sqrt_D) / denominator;
                 *x2 = (-b - sqrt_D) / denominator;
-                return 2; 
+                return TWO_ROOTS;
             }
         }
     }

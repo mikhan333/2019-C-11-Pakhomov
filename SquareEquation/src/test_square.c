@@ -17,6 +17,11 @@
 #define EPSILON 1e-2
 #define CHECK_EQUAL(a, b) ((((b)-EPSILON < (a)) && ((b) + EPSILON > (a))) ? True : False)
 // #define PRINT_SQUARE(a, b, c, nRoots, x1, x2, test_nRoots, test_x1, text_x2) printf("")
+#define PRINT_ERROR(err, test_nRoots, a, b, c, test_x1, test_x2)                              \
+    {                                                                                         \
+        printf("%s : assert_square() : test_count of roots=%d\n", err, test_nRoots);          \
+        printf("a=%lf, b=%lf, c=%lf, test_x1=%lf, test_x2=%lf\n", a, b, c, test_x1, test_x2); \
+    }
 
 /**
  * @brief Assert func for solve_square_equation
@@ -38,34 +43,35 @@ void assert_square(double a, double b, double c, int test_nRoots, double test_x1
     int nRoots = solve_square_equation(a, b, c, &x1, &x2, flag);
     if (nRoots != test_nRoots)
     {
-        //TODO: send it in macros
-        printf("ERROR_NUMBER_ROOTS : assert_square()\n"
-               "a=%lf, b=%lf, c=%lf, test_x1=%lf, test_x2=%lf\n"
-               "count of roots=%d, test count=%d\n\n",
-               a, b, c, test_x1, test_x2, nRoots, test_nRoots);
+        PRINT_ERROR("ERROR_NUMBER_ROOTS", test_nRoots, a, b, c, test_x1, test_x2);
+        printf("count of roots=%d\n\n", nRoots);
         exit(EXIT_FAILURE);
     }
 
-    if (nRoots == 1)
+    if (nRoots == ONE_ROOT)
     {
         if (!CHECK_EQUAL(x1, test_x1))
         {
-            printf("ERROR_VALUE_ROOT : assert_square() : count of roots=1; \n"
-                   "a=%lf, b=%lf, c=%lf, test_x1=%lf, test_x2=%lf\n"
-                   "x1=%lf\n\n",
-                   a, b, c, test_x1, test_x2, x1);
+            PRINT_ERROR("ERROR_VALUE_ROOT", test_nRoots, a, b, c, test_x1, test_x2);
+            printf("count of roots=%d, x1=%lf\n\n", nRoots, x1);
+            // printf("ERROR_VALUE_ROOT : assert_square() : count of roots=1; \n"
+            //        "a=%lf, b=%lf, c=%lf, test_x1=%lf, test_x2=%lf\n"
+            //        "x1=%lf\n\n",
+            //        a, b, c, test_x1, test_x2, x1);
             exit(EXIT_FAILURE);
         }
     }
-    else if (nRoots == 2 || nRoots == -2)
+    else if (nRoots == TWO_ROOTS || nRoots == COMPLEX_ROOTS)
     {
         if (!((CHECK_EQUAL(x1, test_x1) && CHECK_EQUAL(x2, test_x2)) ||
               (CHECK_EQUAL(x2, test_x1) && CHECK_EQUAL(x1, test_x2))))
         {
-            printf("ERROR_VALUE_ROOT : assert_square() : count of roots=2; \n"
-                   "a=%lf, b=%lf, c=%lf, test_x1=%lf, test_x2=%lf\n"
-                   "x1=%lf, x2=%lf\n\n",
-                   a, b, c, test_x1, test_x2, x1, x2);
+            PRINT_ERROR("ERROR_VALUE_ROOT", test_nRoots, a, b, c, test_x1, test_x2);
+            printf("count of roots=%d, x1=%lf, x2=%lf\n\n", nRoots, x1, x2);
+            // printf("ERROR_VALUE_ROOT : assert_square() : count of roots=2; \n"
+            //        "a=%lf, b=%lf, c=%lf, test_x1=%lf, test_x2=%lf\n"
+            //        "x1=%lf, x2=%lf\n\n",
+            //        a, b, c, test_x1, test_x2, x1, x2);
             exit(EXIT_FAILURE);
         }
     }
@@ -73,7 +79,6 @@ void assert_square(double a, double b, double c, int test_nRoots, double test_x1
 
 /**
  * @brief Test input of square  function
- * TODO: add some tests here
  */
 void test_square_input()
 {
@@ -87,8 +92,8 @@ void test_square_input()
  */
 void test_square_ordinary_roots()
 {
-    assert_square(1, -5, 6, 2, 3, 2, False);
-    assert_square(2.3, 5.6, 3.01, 2, -0.80, -1.63, False);
+    assert_square(1, -5, 6, TWO_ROOTS, 3, 2, False);
+    assert_square(2.3, 5.6, 3.01, TWO_ROOTS, -0.80, -1.63, False);
 
     int i = 0;
     double x1, x2;
@@ -97,7 +102,7 @@ void test_square_ordinary_roots()
     {
         x1 = (-10 + rand() % 10);
         x2 = (1 + rand() % 10);
-        assert_square(1, -(x1 + x2), x1 * x2, 2, x1, x2, False);
+        assert_square(1, -(x1 + x2), x1 * x2, TWO_ROOTS, x1, x2, False);
     }
 }
 
@@ -107,8 +112,8 @@ void test_square_ordinary_roots()
  */
 void test_square_complex_roots()
 {
-    assert_square(1, 2, 2, -2, -1, 1, True);
-    assert_square(2.1, 1.34, 4.56, -2, -0.31, 1.43, True);
+    assert_square(1, 2, 2, COMPLEX_ROOTS, -1, 1, True);
+    assert_square(2.1, 1.34, 4.56, COMPLEX_ROOTS, -0.31, 1.43, True);
 }
 
 /**
@@ -117,14 +122,14 @@ void test_square_complex_roots()
  */
 void test_square_extreme_cases_roots()
 {
-    assert_square(0, 0, 0, NROOTS_INFINITY, 0, 0, False); // 0 = 0
-    assert_square(0, 0, 1, 0, 0, 0, False);               // 1 = 0
-    assert_square(0, 1, 0, 1, 0, 0, False);               // x = 0
-    assert_square(0, 1, 1, 1, -1, 0, False);              // x + 1 = 0
-    assert_square(1, 0, 0, 1, 0, 0, False);               // x^2 = 0
-    assert_square(1, 1, 0, 2, 0, -1, False);              // x^2 + x = 0
-    assert_square(1, 2, 1, 1, -1, 0, False);              // x^2 + 2 * x + 1 = 0
-    assert_square(1, 1, 1, 0, 0, 0, False);               // x^2 + x + 1 = 0
+    assert_square(0, 0, 0, INFINITY_ROOTS, 0, 0, False); // 0 = 0
+    assert_square(0, 0, 1, ZERO_ROOTS, 0, 0, False);     // 1 = 0
+    assert_square(0, 1, 0, ONE_ROOT, 0, 0, False);       // x = 0
+    assert_square(0, 1, 1, ONE_ROOT, -1, 0, False);      // x + 1 = 0
+    assert_square(1, 0, 0, ONE_ROOT, 0, 0, False);       // x^2 = 0
+    assert_square(1, 1, 0, TWO_ROOTS, 0, -1, False);     // x^2 + x = 0
+    assert_square(1, 2, 1, ONE_ROOT, -1, 0, False);      // x^2 + 2 * x + 1 = 0
+    assert_square(1, 1, 1, ZERO_ROOTS, 0, 0, False);     // x^2 + x + 1 = 0
 }
 
 /**

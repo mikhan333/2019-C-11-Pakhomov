@@ -45,22 +45,22 @@ int main()
         nRoots = solve_square_equation(a, b, c, &x1, &x2, False);
         switch (nRoots)
         {
-        case 0:
+        case ZERO_ROOTS:
             printf("No roots\n");
             break;
-        case 1:
+        case ONE_ROOT:
             printf("One root: \n");
             printf("x1 = %lf\n", x1);
             break;
-        case 2:
+        case TWO_ROOTS:
             printf("Two roots: \n");
             printf("x1 = %lf\nx2 = %lf\n", x1, x2);
             break;
-        case -2:
+        case COMPLEX_ROOTS:
             printf("Two complex roots: \n");
             printf("x1 = %lf + i * %lf\nx2 = %lf - i * %lf\n", x1, x2, x1, x2);
             break;
-        case NROOTS_INFINITY:
+        case INFINITY_ROOTS:
             printf("Any number is root\n");
             break;
         default:
@@ -68,7 +68,7 @@ int main()
             break;
         }
 
-        printf("Try again? (y / n) \n");
+        printf("\nTry again? (y / n) \n");
         scanf("%s", &inputYesNo);
         if (inputYesNo == 'n')
             break;

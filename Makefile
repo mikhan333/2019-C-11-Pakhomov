@@ -1,18 +1,12 @@
 
 TARGET = hello
-SRCS = main.c hello.c
+SRCS = main.c
 OBJS = $(SRCS:.c=.o)
-
-# .PHONY: all clean install uninstall
-
-# all: $(TARGET)
-# $(TARGET): $(OBJS)
-#     $(CC) -o $(TARGET) $(OBJS) $(CFLAGS)
 
 .c.o:
 	$(CC) $(CFLAGS)  -c $< -o $@
 
 clean: 
 	rm -rf SortLongText/$(OBJS)
-	# $(MAKE) -C SquareEquation
+	$(MAKE) -C Stack $@
 	# rm -rf $(TARGET) $(OBJS)

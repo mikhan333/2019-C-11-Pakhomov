@@ -88,9 +88,9 @@ int str_cmp_start(const void *first_v, const void *second_v)
     {
         if (tolower(*a) == tolower(*b))
             ++a, ++b;
-        else if(!isalpha(*a))
+        else if (!isalpha(*a))
             ++a;
-        else if(!isalpha(*b))
+        else if (!isalpha(*b))
             ++b;
         else
             break;
@@ -116,9 +116,9 @@ int str_cmp_end(const void *first_v, const void *second_v)
     {
         if (tolower(*a) == tolower(*b))
             --a, --b;
-        else if(!isalpha(*a))
+        else if (!isalpha(*a))
             --a;
-        else if(!isalpha(*b))
+        else if (!isalpha(*b))
             --b;
         else
             break;
@@ -129,8 +129,6 @@ int str_cmp_end(const void *first_v, const void *second_v)
 /**
  * @brief Read data from file in buffer
  * 
- * * Add '\n' in the buffer before last char '\0'
- * 
  * @param path_file_in Input file
  * @return char* Buffer
  */
@@ -139,7 +137,7 @@ char *read_file(const char *path_file_in)
     FILE *file_in = fopen(path_file_in, "rb");
     if (file_in == NULL)
     {
-        puts("ERROR: read_file(): problem with opening the file.");
+        printf("ERROR: read_file(): problem with opening the file : %s", path_file_in);
         exit(EXIT_FAILURE);
     }
 
@@ -150,7 +148,7 @@ char *read_file(const char *path_file_in)
     char *text = (char *)calloc(len_file_in + 2, sizeof(char));
     if (fread(text, sizeof(char), len_file_in, file_in) != len_file_in)
     {
-        puts("ERROR: read_file(): problem with reading the file.");
+        printf("ERROR: read_file(): problem with reading the file : %s", path_file_in);
         exit(EXIT_FAILURE);
     }
     text[len_file_in] = '\n';
@@ -160,42 +158,19 @@ char *read_file(const char *path_file_in)
 }
 
 /**
- * @brief Triple sorting data and write data in file
+ * @brief Write lines if file
  * 
- * @param path_file_out Output file
- * @param text Buffer with poem
- * @param lines List of lines
- * @param count_lines Count of lines
+ * @param fd File descriptor
+ * @param lines 
+ * @param count_lines 
  */
-void write_file(const char *path_file_out, char *text, Line *lines, int count_lines)
+void write_lines(FILE *fd, Line *lines, int count_lines)
 {
-    FILE *file_out = fopen(path_file_out, "wb+");
-    if (file_out == NULL)
-    {
-        puts("ERROR: sort_write_text(): problem with opening the file.");
-        exit(EXIT_FAILURE);
-    }
-
-    fputs("---------------------------------------------\nBY START OF STRING\n\n", file_out);
-    qsort(lines, count_lines, sizeof(Line), str_cmp_start);
     for (int i = 0; i < count_lines; i++)
     {
-        fwrite(lines[i].start, sizeof(char), lines[i].len, file_out);
-        fputs("\n", file_out);
+        fwrite(lines[i].start, sizeof(char), lines[i].len, fd);
+        fputs("\n", fd);
     }
-
-    fputs("---------------------------------------------\nBY END OF STRING\n\n", file_out);
-    qsort(lines, count_lines, sizeof(Line), str_cmp_end);
-    for (int i = 0; i < count_lines; i++)
-    {
-        fwrite(lines[i].start, sizeof(char), lines[i].len, file_out);
-        fputs("\n", file_out);
-    }
-
-    fputs("---------------------------------------------\nORIGINAL\n\n", file_out);
-    fputs(text, file_out);
-
-    fclose(file_out);
 }
 
 /**
@@ -209,7 +184,7 @@ int main()
     puts("This is a program for tripple sorting Eugene Onegin:\n"
          "1. start of line; 2. end of line; 3. none\n"
          "Created by Mikhail Pakhomov.\n");
-    // File paths 
+    // File paths
     char *path_file_in = "/home/mikhan/2019-C-11-Pakhomov/SortLongText/poem.txt";
     char *path_file_out = "/home/mikhan/2019-C-11-Pakhomov/SortLongText/sorted_poem.txt";
 
@@ -217,15 +192,33 @@ int main()
     char *text = read_file(path_file_in);
     int count_lines = get_count_lines(text);
 
-    // Create mass of lines, in which we have pointer on data-lines in text and length of this lines 
+    // Create mass of lines, in which we have pointer on data-lines in text and length of this lines
     Line *lines = create_mas_lines(text, count_lines);
 
     // Sort the text and write this in the output file
-    write_file(path_file_out, text, lines, count_lines);
+    FILE *file_out = fopen(path_file_out, "wb+");
+    if (file_out == NULL)
+    {
+        printf("ERROR: main(): problem with opening the file : %s", path_file_out);
+        exit(EXIT_FAILURE);
+    }
+
+    fputs("---------------------------------------------\nBY START OF STRING\n\n", file_out);
+    qsort(lines, count_lines, sizeof(Line), str_cmp_start);
+    write_lines(file_out, lines, count_lines);
+
+    fputs("---------------------------------------------\nBY END OF STRING\n\n", file_out);
+    qsort(lines, count_lines, sizeof(Line), str_cmp_end);
+    write_lines(file_out, lines, count_lines);
+
+    fputs("---------------------------------------------\nORIGINAL\n\n", file_out);
+    fputs(text, file_out);
 
     // Clear memory
+    fclose(file_out);
     free(lines);
     free(text);
     puts("-----------------------------------------------\n");
+    
     return 0;
 }

@@ -1,22 +1,27 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <cstdlib>
 #include "src/Stack.h"
 
 void test_stack_ordinary()
 {
-    Stack st = {};
-    StackConstruct(&st);
+    // Stack_t st = {};
+    // StackConstruct(&st);
+    StackInit(st);
     StackPush(&st, 10);
-    Type_t x;
+    StackPush(&st, 20);
+    StackPush(&st, 5);
+    StackDump(&st);
+    int err = 0;
 
-    bool err = StackPop(&st, &x);
-    if (!err)
-        printf("Something wrong\n");
+    Elem_t x = StackPop(&st, &err);
+    if (err)
+        printf("Something wrong %d\n", err);
     printf("number: %d\n", x);
 
     StackDestructor(&st);
 }
 
+// TODO correct tests
 void test_stack()
 {
     test_stack_ordinary();

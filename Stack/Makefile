@@ -1,12 +1,15 @@
 TARGET = test_stack.o
-SRCS = main.c src/Stack.c
-OBJS = $(SRCS:.c=.o)
+SRCS = main.cpp src/Stack.cpp
+OBJS = $(SRCS:.cpp=.o)
 
-CFLAGS = -lm
+CC=g++
+CFLAGS = -c -Wall
+LDFLAGS = -lm
 
-.c.o:
+.DEFAULT_GOAL = start
+
+.cpp.o:
 	$(CC) $(CFLAGS)  -c $< -o $@
-
 .PHONY: all clean
 
 start: all
@@ -14,7 +17,8 @@ start: all
 
 all: $(TARGET)
 $(TARGET): $(OBJS)
-	$(CC) -o $(TARGET) $(OBJS) $(CFLAGS)
+	$(CC) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 clean: 
 	rm -rf $(TARGET) $(OBJS)
+	rm debug.log

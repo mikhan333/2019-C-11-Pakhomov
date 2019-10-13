@@ -1,6 +1,8 @@
-TARGET = test_stack.o
-SRCS = main.cpp src/Stack.cpp
+TARGET = StackTests
+# StackTests or Processor
+SRCS = src/$(TARGET).cpp lib/Stack.cpp
 OBJS = $(SRCS:.cpp=.o)
+DEBUG_FILES = *.log debug/*.log
 
 CC=g++
 CFLAGS = -c -Wall
@@ -20,5 +22,4 @@ $(TARGET): $(OBJS)
 	$(CC) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 clean: 
-	rm -rf $(TARGET) $(OBJS)
-	rm debug.log
+	rm -rf $(TARGET) $(OBJS) $(DEBUG_FILES)

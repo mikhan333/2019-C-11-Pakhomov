@@ -2,15 +2,19 @@
 #include <cassert>
 #include <iostream>
 #include <cstring>
+#include <cerrno>
 #include "Stack.h"
 
 bool StackConstruct(Stack_t *this_, const short int flag /* = 2 */, const char *file_dump /* = nullptr */)
 {
-    STACK_ASSERT_OK;
-
+    // TODO STACK_ASSERT_OK ?
     if (file_dump)
         strcpy(this_->file_dump, file_dump);
-    
+    FILE *fd = fopen(this_->file_dump, "w");
+    if (!fd)
+        return false;
+    fclose(fd);
+
     this_->size = 0;
     this_->inspection_level = flag;
 
@@ -24,7 +28,6 @@ bool StackConstruct(Stack_t *this_, const short int flag /* = 2 */, const char *
         *(Canary_t *)this_->data = STACK_CANARY1;
         *(Canary_t *)StackAt(this_, this_->max_size) = STACK_CANARY2;
         STACK_NEW_HASH(this_);
-
     }
 
     STACK_ASSERT_OK;
@@ -38,15 +41,17 @@ bool StackDestructor(Stack_t *this_)
     this_->size = 0;
     free(this_->data);
     this_->data = NULL;
-
-    STACK_NEW_HASH(this_);
-    STACK_ASSERT_OK;
+    this_->hash = 0;
+    // TODO STACK_ASSERT_OK ?
     return true;
 }
 
 Elem_t *StackAt(const Stack_t *this_, const size_t iter)
 {
-    return (Elem_t *)(this_->data + sizeof(Canary_t) + sizeof(Elem_t) * iter);
+    if (this_->inspection_level)
+        return (Elem_t *)(this_->data + sizeof(Canary_t) + sizeof(Elem_t) * iter);
+    else
+        return (Elem_t *)(this_->data + sizeof(Elem_t) * iter);
 }
 
 bool StackPush(Stack_t *this_, const Elem_t elem)
@@ -56,7 +61,7 @@ bool StackPush(Stack_t *this_, const Elem_t elem)
     if (this_->size >= this_->max_size)
     {
         if (!StackSetSize(this_, 2 * this_->max_size))
-            return false;
+            return false; // TODO change this_->errno_st ?
     }
     *StackAt(this_, this_->size++) = elem;
 
@@ -65,13 +70,13 @@ bool StackPush(Stack_t *this_, const Elem_t elem)
     return true;
 }
 
-Elem_t StackPop(Stack_t *this_, int *err /* = nullptr */)
+Elem_t StackPop(Stack_t *this_, bool *err /* = nullptr */)
 {
     STACK_ASSERT_OK;
     if (this_->size <= 0)
     {
         if (err)
-            *err = 1;
+            *err = true;
         return 0;
     }
 
@@ -83,26 +88,70 @@ Elem_t StackPop(Stack_t *this_, int *err /* = nullptr */)
 
     STACK_NEW_HASH(this_);
     STACK_ASSERT_OK;
+    if (err)
+        *err = false;
     return elem;
 }
 
-bool StackOk(const Stack_t *this_) // TODO this function & dublicate internal data
+bool StackOk(Stack_t *this_)
 {
-    return true;
+    bool not_error = false;
+    if (!this_)
+        errno = EFAULT;
+
+    else if (!this_->data)
+        this_->errno_st = STACK_NULLPTR_DATA;
+    else if (this_->max_size <= 0)
+        this_->errno_st = STACK_INCORRECT_MAX_SIZE;
+    else if (this_->size < 0 || this_->size > this_->max_size)
+        this_->errno_st = STACK_INCORRECT_SIZE;
+    else if (this_->inspection_level < 0 || this_->inspection_level > 2)
+        this_->errno_st = STACK_INCORRECT_INSPECTION_LEVEL;
+
+    else if (this_->inspection_level)
+    {
+        if (this_->canary_start != STACK_CANARY1)
+            this_->errno_st = STACK_BAD_CANARY_START;
+        else if (this_->canary_end != STACK_CANARY2)
+            this_->errno_st = STACK_BAD_CANARY_END;
+        else if (*(Canary_t *)this_->data != STACK_CANARY1)
+            this_->errno_st = STACK_BAD_DATA_CANARY_START;
+        else if (*(Canary_t *)StackAt(this_, this_->max_size) != STACK_CANARY2)
+            this_->errno_st = STACK_BAD_DATA_CANARY_END;
+
+        else if (this_->inspection_level == 2)
+        {
+            if (this_->hash != StackGetHash(this_))
+                this_->errno_st = STACK_BAD_HASH;
+            else
+                not_error = true;
+        }
+        else
+            not_error = true;
+    }
+    else
+        not_error = true;
+    return not_error;
 }
 
-bool StackDump(const Stack_t *this_) // TODO this function
+bool StackDump(Stack_t *this_)
 {
-    FILE *fd = fopen(this_->file_dump, "wb+");
+    FILE *fd = fopen(this_->file_dump, "a");
     if (!fd)
         return false;
 
+    if (!this_)
+    {
+        fprintf(fd, "Stack_t (ERROR!!!) - nullptr\n");
+        return true;
+    }
+
     fprintf(
-        fd, 
-        "Stack_t \"%s\" [%p] (%s)\n", 
+        fd,
+        "Stack_t \"%s\" [%p] (%s)\n",
         this_->name,
-        &this_->canary_start, 
-        StackOk ? "ok" : "ERROR!!!");
+        &this_->canary_start,
+        StackOk(this_) ? "ok" : "ERROR!!!");
     fprintf(
         fd,
         "{\n"
@@ -114,15 +163,20 @@ bool StackDump(const Stack_t *this_) // TODO this function
         this_->size,
         this_->max_size, this_->data);
 
-    fprintf(fd, "\t\t-[can]:0x%08x\n", *(Canary_t *)this_->data);
-    for (size_t i = 0; i < this_->max_size; i++)
+    if (this_->data)
     {
-        if (i >= this_->size)
-            fprintf(fd, "\t\t [%3lu]:%d\n", i, *StackAt(this_, i));
-        else
-            fprintf(fd, "\t\t*[%3lu]:%d\n", i, *StackAt(this_, i));
+        if (this_->inspection_level)
+            fprintf(fd, "\t\t-[can]:0x%08x\n", *(Canary_t *)this_->data);
+        for (size_t i = 0; i < this_->max_size; i++)
+        {
+            if (i >= this_->size)
+                fprintf(fd, "\t\t [%3lu]:%f\n", i, *StackAt(this_, i)); // TODO %d or %f
+            else
+                fprintf(fd, "\t\t*[%3lu]:%f\n", i, *StackAt(this_, i));
+        }
+        if (this_->inspection_level)
+            fprintf(fd, "\t\t-[can]:0x%08x\n\n", *(Canary_t *)StackAt(this_, this_->max_size));
     }
-    fprintf(fd, "\t\t-[can]:0x%08x\n\n", *(Canary_t *)StackAt(this_, this_->max_size));
 
     fprintf(
         fd,
@@ -130,12 +184,49 @@ bool StackDump(const Stack_t *this_) // TODO this function
         "\tfile_dump        = %s\n"
         "\tinspection_level = %d\n\n"
         "\thash    = 0x%08x\n"
-        "\tcanary2 = 0x%08x\n"
-        "}\n",
+        "\tcanary2 = 0x%08x\n",
         this_->file_dump,
         this_->inspection_level,
         this_->hash,
         this_->canary_end);
+
+    fprintf(fd, "\terrno   = %d (", this_->errno_st);
+    switch (this_->errno_st)
+    {
+    case 0:
+        fprintf(fd, "no error");
+        break;
+    case STACK_NULLPTR_DATA:
+        fprintf(fd, "bad data pointer");
+        break;
+    case STACK_INCORRECT_SIZE:
+        fprintf(fd, "bad size");
+        break;
+    case STACK_INCORRECT_MAX_SIZE:
+        fprintf(fd, "bad maximum size");
+        break;
+    case STACK_INCORRECT_INSPECTION_LEVEL:
+        fprintf(fd, "bad inspection level");
+        break;
+    case STACK_BAD_CANARY_START:
+        fprintf(fd, "bad canary start, should be: 0x%08x", STACK_CANARY1);
+        break;
+    case STACK_BAD_CANARY_END:
+        fprintf(fd, "bad canary end, should be: 0x%08x", STACK_CANARY2);
+        break;
+    case STACK_BAD_DATA_CANARY_START:
+        fprintf(fd, "bad data-canary start, should be: 0x%08x", STACK_CANARY1);
+        break;
+    case STACK_BAD_DATA_CANARY_END:
+        fprintf(fd, "bad data-canary end, should be: 0x%08x", STACK_CANARY2);
+        break;
+    case STACK_BAD_HASH:
+        fprintf(fd, "bad hash value, should be: 0x%08x", StackGetHash(this_));
+        break;
+    default:
+        fprintf(fd, "unrecognized error");
+    }
+    fprintf(fd, ")\n}\n");
 
     fclose(fd);
     return true;
@@ -143,10 +234,7 @@ bool StackDump(const Stack_t *this_) // TODO this function
 
 bool StackSetSize(Stack_t *this_, const size_t max_size)
 {
-    STACK_ASSERT_OK;
-    if (this_->size > max_size || max_size <= 0)
-        return false;
-
+    // TODO STACK_ASSERT_OK ?
     char *new_data;
     if (this_->inspection_level)
         new_data = (char *)realloc(this_->data, max_size * sizeof(Elem_t) + 2 * sizeof(Canary_t));
@@ -163,14 +251,12 @@ bool StackSetSize(Stack_t *this_, const size_t max_size)
         *(Canary_t *)StackAt(this_, max_size) = STACK_CANARY2;
         STACK_NEW_HASH(this_);
     }
-
-    STACK_ASSERT_OK;
+    // TODO STACK_ASSERT_OK ?
     return true;
 }
 
 /**
- * @brief Hash function
- * 
+ * Hash functions
  */
 static const unsigned char SHashTable[256] =
     {

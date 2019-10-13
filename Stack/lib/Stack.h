@@ -1,7 +1,7 @@
 #ifndef STACK_H
 #define STACK_H
 
-#define STACK_INITIAL_MAXSIZE 36
+#define STACK_INITIAL_MAXSIZE 32
 #define STACK_DELTA_SIZE STACK_INITIAL_MAXSIZE / 2
 
 typedef unsigned Canary_t;
@@ -23,22 +23,22 @@ typedef unsigned Canary_t;
         if (stk->inspection_level == 2)    \
             stk->hash = StackGetHash(stk); \
     }
-
-#define StackInit(stk)    \
-    Stack_t stk = {#stk}; \
+#define StackName(stk) Stack_t stk = {#stk}
+#define StackInit(stk) \
+    StackName(stk);    \
     StackConstruct(&stk);
 
 enum StackError
 {
     STACK_NULLPTR_DATA = 1,
     STACK_INCORRECT_SIZE,
-    STACK_INCORRECT_MAX_SIZE,
     STACK_INCORRECT_INSPECTION_LEVEL,
     STACK_BAD_CANARY_START,
     STACK_BAD_CANARY_END,
     STACK_BAD_DATA_CANARY_START,
     STACK_BAD_DATA_CANARY_END,
     STACK_BAD_HASH,
+    STACK_INCORRECT_PTR_DATA,
 };
 
 typedef double Elem_t;
@@ -51,6 +51,7 @@ struct Stack_t
 
     char *data;
     size_t size;
+    char *data_copy;
     size_t max_size;
 
     unsigned hash;
@@ -58,7 +59,11 @@ struct Stack_t
     Canary_t canary_end;
 };
 
-bool StackConstruct(Stack_t *this_, const short int flag = 2, const char *file_dump = nullptr);
+bool StackConstruct(
+    Stack_t *this_, 
+    const short int flag = 2, 
+    const char *file_dump = nullptr, 
+    const char *rights = nullptr);
 bool StackDestructor(Stack_t *this_);
 bool StackPush(Stack_t *this_, const Elem_t elem);
 Elem_t StackPop(Stack_t *this_, bool *err = nullptr);

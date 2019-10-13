@@ -1,0 +1,15 @@
+Stack_t "victim" [0x7fffe3dbadd8] (ERROR!!!)
+{
+	canary1 = 0x00000000 
+	size    = 0 
+
+	data[0] = [(nil)] 
+	{
+	}
+	file_dump        = debug/debug.loÿÿÿÿ
+	inspection_level = 0 
+
+	hash    = 0x00000000 
+	canary2 = 0x00000000 
+	errno   = 1 (data pointer is nullptr)
+}

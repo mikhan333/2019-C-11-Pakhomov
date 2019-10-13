@@ -1,3 +1,4 @@
+// #define NDEBUG
 #include <cstdlib>
 #include <cassert>
 #include <iostream>
@@ -5,12 +6,20 @@
 #include <cerrno>
 #include "Stack.h"
 
-bool StackConstruct(Stack_t *this_, const short int flag /* = 2 */, const char *file_dump /* = nullptr */)
+bool StackConstruct(
+    Stack_t *this_,
+    const short int flag /* = 2 */,
+    const char *file_dump /* = nullptr */,
+    const char *rights /* = nullptr */)
 {
     // TODO STACK_ASSERT_OK ?
     if (file_dump)
         strcpy(this_->file_dump, file_dump);
-    FILE *fd = fopen(this_->file_dump, "w");
+    FILE *fd;
+    if (rights)
+        fd = fopen(this_->file_dump, rights);
+    else
+        fd = fopen(this_->file_dump, "w");
     if (!fd)
         return false;
     fclose(fd);
@@ -36,12 +45,15 @@ bool StackConstruct(Stack_t *this_, const short int flag /* = 2 */, const char *
 
 bool StackDestructor(Stack_t *this_)
 {
-    STACK_ASSERT_OK;
+    // STACK_ASSERT_OK;
 
     this_->size = 0;
+    this_->max_size = 0;
     free(this_->data);
-    this_->data = NULL;
+    this_->data = nullptr;
+    this_->data_copy = nullptr;
     this_->hash = 0;
+    this_->errno_st = 0;
     // TODO STACK_ASSERT_OK ?
     return true;
 }
@@ -101,9 +113,11 @@ bool StackOk(Stack_t *this_)
 
     else if (!this_->data)
         this_->errno_st = STACK_NULLPTR_DATA;
-    else if (this_->max_size <= 0)
-        this_->errno_st = STACK_INCORRECT_MAX_SIZE;
-    else if (this_->size < 0 || this_->size > this_->max_size)
+    else if (this_->data != this_->data_copy)
+        this_->errno_st = STACK_INCORRECT_PTR_DATA;
+    else if (
+        this_->max_size > (this_->size + STACK_DELTA_SIZE) * 2 ||
+        this_->size > this_->max_size)
         this_->errno_st = STACK_INCORRECT_SIZE;
     else if (this_->inspection_level < 0 || this_->inspection_level > 2)
         this_->errno_st = STACK_INCORRECT_INSPECTION_LEVEL;
@@ -142,7 +156,7 @@ bool StackDump(Stack_t *this_)
 
     if (!this_)
     {
-        fprintf(fd, "Stack_t (ERROR!!!) - nullptr\n");
+        fprintf(fd, "Stack_t (ERROR!!!) - nullptr {}\n");
         return true;
     }
 
@@ -155,18 +169,24 @@ bool StackDump(Stack_t *this_)
     fprintf(
         fd,
         "{\n"
-        "\tcanary1 = 0x%08x\n"
-        "\tsize    = %lu\n\n"
-        "\tdata[%lu] = [%p]\n"
+        "\tcanary1 = 0x%08x %s\n"
+        "\tsize    = %lu %s\n\n"
+        "\tdata[%lu] = [%p] %s\n"
         "\t{\n",
-        this_->canary_start,
-        this_->size,
-        this_->max_size, this_->data);
+        this_->canary_start, this_->errno_st == STACK_BAD_CANARY_START ? "(BAD CANARY VALUE)" : "",
+        this_->size, this_->errno_st == STACK_INCORRECT_SIZE ? "(BAD SIZE VALUE)" : "",
+        this_->max_size, this_->data, this_->errno_st == STACK_INCORRECT_PTR_DATA ? "(BAD POINTER VALUE)" : "");
 
-    if (this_->data)
+    if (this_->errno_st != STACK_NULLPTR_DATA &&
+        this_->errno_st != STACK_INCORRECT_PTR_DATA &&
+        this_->errno_st != STACK_INCORRECT_SIZE)
     {
         if (this_->inspection_level)
-            fprintf(fd, "\t\t-[can]:0x%08x\n", *(Canary_t *)this_->data);
+            fprintf(
+                fd,
+                "\t\t-[can]:0x%08x %s\n",
+                *(Canary_t *)this_->data,
+                this_->errno_st == STACK_BAD_DATA_CANARY_START ? "(BAD CANARY VALUE)" : "");
         for (size_t i = 0; i < this_->max_size; i++)
         {
             if (i >= this_->size)
@@ -175,20 +195,24 @@ bool StackDump(Stack_t *this_)
                 fprintf(fd, "\t\t*[%3lu]:%f\n", i, *StackAt(this_, i));
         }
         if (this_->inspection_level)
-            fprintf(fd, "\t\t-[can]:0x%08x\n\n", *(Canary_t *)StackAt(this_, this_->max_size));
+            fprintf(
+                fd,
+                "\t\t-[can]:0x%08x %s\n\n",
+                *(Canary_t *)StackAt(this_, this_->max_size),
+                this_->errno_st == STACK_BAD_DATA_CANARY_END ? "(BAD CANARY VALUE)" : "");
     }
 
     fprintf(
         fd,
         "\t}\n"
         "\tfile_dump        = %s\n"
-        "\tinspection_level = %d\n\n"
-        "\thash    = 0x%08x\n"
-        "\tcanary2 = 0x%08x\n",
+        "\tinspection_level = %d %s\n\n"
+        "\thash    = 0x%08x %s\n"
+        "\tcanary2 = 0x%08x %s\n",
         this_->file_dump,
-        this_->inspection_level,
-        this_->hash,
-        this_->canary_end);
+        this_->inspection_level, this_->errno_st == STACK_INCORRECT_INSPECTION_LEVEL ? "(BAD VER-LEVEL VALUE)" : "",
+        this_->hash, this_->errno_st == STACK_BAD_HASH ? "(BAD HASH VALUE)" : "",
+        this_->canary_end, this_->errno_st == STACK_BAD_CANARY_END ? "(BAD CANARY VALUE)" : "");
 
     fprintf(fd, "\terrno   = %d (", this_->errno_st);
     switch (this_->errno_st)
@@ -197,13 +221,10 @@ bool StackDump(Stack_t *this_)
         fprintf(fd, "no error");
         break;
     case STACK_NULLPTR_DATA:
-        fprintf(fd, "bad data pointer");
+        fprintf(fd, "data pointer is nullptr");
         break;
     case STACK_INCORRECT_SIZE:
         fprintf(fd, "bad size");
-        break;
-    case STACK_INCORRECT_MAX_SIZE:
-        fprintf(fd, "bad maximum size");
         break;
     case STACK_INCORRECT_INSPECTION_LEVEL:
         fprintf(fd, "bad inspection level");
@@ -222,6 +243,9 @@ bool StackDump(Stack_t *this_)
         break;
     case STACK_BAD_HASH:
         fprintf(fd, "bad hash value, should be: 0x%08x", StackGetHash(this_));
+        break;
+    case STACK_INCORRECT_PTR_DATA:
+        fprintf(fd, "bad pointer data, copy pointer is: [%p]", this_->data_copy);
         break;
     default:
         fprintf(fd, "unrecognized error");
@@ -244,6 +268,7 @@ bool StackSetSize(Stack_t *this_, const size_t max_size)
     if (!new_data)
         return false;
     this_->data = new_data;
+    this_->data_copy = new_data;
     this_->max_size = max_size;
 
     if (this_->inspection_level)
@@ -285,8 +310,7 @@ unsigned StackGetHash(const Stack_t *this_)
 
     for (size_t i = 0; i != this_->size; i++)
     {
-
-        hash += SHashTable[(*(this_->data + i)) & 255];
+        hash += SHashTable[(*(int *)StackAt(this_, i)) & 255];
         hash = (hash << (32 - rotate)) | (hash >> rotate);
         hash = (hash + i) * seed;
     }

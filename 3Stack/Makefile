@@ -1,4 +1,3 @@
-# StackTests or Processor
 TARGET = StackTests
 
 SRCS = src/$(TARGET).cpp lib/Stack.cpp

@@ -204,9 +204,9 @@ bool StackDump(Stack_t *this_)
         for (size_t i = 0; i < this_->max_size; i++)
         {
             if (i >= this_->size)
-                fprintf(fd, "\t\t [%3lu]:%f\n", i, *StackAt(this_, i)); // TODO %d or %f
+                fprintf(fd, "\t\t [%3lu]:%d\n", i, *StackAt(this_, i)); // TODO %d or %f
             else
-                fprintf(fd, "\t\t*[%3lu]:%f\n", i, *StackAt(this_, i));
+                fprintf(fd, "\t\t*[%3lu]:%d\n", i, *StackAt(this_, i));
         }
 #ifndef NDEBUG
         fprintf(

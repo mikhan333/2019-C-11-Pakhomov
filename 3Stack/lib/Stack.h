@@ -67,7 +67,7 @@ enum StackError
  * @brief Structure that implements Stack
  * 
  */
-typedef double Elem_t;
+typedef int Elem_t;
 struct Stack_t
 {
     char name[30];

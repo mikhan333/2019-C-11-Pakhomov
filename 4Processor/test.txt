@@ -1,6 +1,0 @@
-pop
-push 5
-pop
-push 256
-push 10
-pop

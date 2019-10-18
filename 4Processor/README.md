@@ -1,3 +1,3 @@
-# My Stack
+# My CPU with assemler
 
-### This stack is similar to the standart stack of c++
+### This project for compiling and execute assembler code

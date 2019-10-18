@@ -1,31 +1,29 @@
-#TARGET = Processor
 
-#LIB = ../3Stack/lib
-SRCS = src/asm.cpp #$(LIB)/Stack.cpp
-OBJS = $(SRCS:.cpp=.o)
-#DEBUG_FILES = debug/*
+SRCS := src/asm.cpp #\
+	#src/disasm.cpp
+OBJS := ${SRCS:.cpp=.o}
+PROGS := ${SRCS:.cpp=}
 
-CC=g++
-CFLAGS = -c -Wall
-LDFLAGS = -lm
+CC := g++
+CFLAGS := -Wall
+LDFLAGS := -lm
 
-.DEFAULT_GOAL = start
-
-.cpp.o:
-	$(CC) $(CFLAGS)  -c $< -o $@
+.DEFAULT_GOAL := start
 .PHONY: all clean
 
-start: all
-	./build/$(TARGET)
+# start: all
+# 	./build/$(TARGET)
 
-# all: $(TARGET)
-# $(TARGET): $(OBJS)
-# 	$(CC) -o $(TARGET) $(OBJS) $(LDFLAGS)
-# 	mv src/asm.o build/asm.o
+asm: src/asm
+	./src/asm
 
-asm:
-	$(CC) $(CFLAGS)  -c $< -o $@
-	$(CC) -o asm asm.o $(LDFLAGS)
+all: ${PROGS}
 
-clean: 
-	rm -rf build/* $(DEBUG_FILES)
+${PROGS} : % : %.o
+	${CC} $< -o $@ ${LDFLAGS}
+
+%.o: %.cpp
+	${CC} ${CFLAGS} -c $< -o $@
+
+clean:
+	rm -f ${PROGS} ${OBJS}

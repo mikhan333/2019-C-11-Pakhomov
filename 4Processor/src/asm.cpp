@@ -2,11 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include <cassert>
-#include <const.hpp>
-// TODO enum & type of data & type of comands --- in the file - lib.h
-// TODO commands in different function from main
-// TODO Makefile
-
+#include "const.hpp"
 
 int check_command(const char *stack_command)
 {
@@ -43,6 +39,8 @@ bool isnumber(const char *stack_value)
 {
     int i = 0;
     char elem;
+    if (*stack_value == '-')
+        i++;
     while ((elem = *(stack_value + i++)) != '\0')
     {
         if (!isdigit(elem))
@@ -95,10 +93,10 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    char stack_command[20];
+    char stack_command[20], stack_comment[256];
     short result, argument;
     int number;
-    while (fscanf(file_in, "%s", stack_command) != EOF) // TODO normal code
+    while (fscanf(file_in, "%s", stack_command) != EOF)
     {
         result = check_command(stack_command);
         printf("%s", stack_command);
@@ -137,7 +135,6 @@ int main(int argc, char *argv[])
                 fwrite(&result, sizeof(short), 1, file_out);
                 break;
             }
-            printf(" %s", stack_command);
             argument = check_argument(stack_command);
             if (argument == ARG_NUMBER ||
                 argument == ARG_BAD_VALUE)
@@ -150,6 +147,7 @@ int main(int argc, char *argv[])
                 result = CMD_POP_REG;
                 fwrite(&result, sizeof(short), 1, file_out);
                 fwrite(&argument, sizeof(short), 1, file_out);
+                printf(" %s", stack_command);
             }
             break;
         case CMD_BAD_VALUE:
@@ -157,7 +155,7 @@ int main(int argc, char *argv[])
             assert(!"Cmd bad value");
             break;
         case CMD_COMMENT:
-            fgets(nullptr, 255, file_in);
+            fgets(stack_comment, 255, file_in);
             break;
         default:
             fwrite(&result, sizeof(short), 1, file_out);

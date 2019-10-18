@@ -26,7 +26,7 @@ void test_stack_ordinary()
 void test_stack_growth()
 {
     StackName(stk_growth);
-    StackConstruct(&stk_growth, 2, "debug/1debug_growth.log");
+    StackConstruct(&stk_growth, "debug/1debug_growth.log");
     int i = 0;
     bool err = 0;
     Elem_t x;
@@ -54,7 +54,7 @@ void test_stack_growth()
 void test_stack_big_data()
 {
     StackName(stk_big_data);
-    StackConstruct(&stk_big_data, 2, "debug/2debug_big_data.log");
+    StackConstruct(&stk_big_data, "debug/2debug_big_data.log");
     bool err = false;
     Elem_t x = 666;
 
@@ -70,36 +70,6 @@ void test_stack_big_data()
     StackDump(&stk_big_data);
 
     StackDestructor(&stk_big_data);
-}
-
-void test_stack_ver_level(short level)
-{
-    bool err = 0;
-    Elem_t value = 10;
-    char path_file[30];
-    sprintf(path_file, "%s%d%s", "debug/3debug_ver_level_", level, ".log");
-
-    StackName(stk_verifications_levels);
-    StackConstruct(&stk_verifications_levels, level, path_file);
-    StackDump(&stk_verifications_levels);
-
-    StackPush(&stk_verifications_levels, value);
-    StackDump(&stk_verifications_levels);
-    Elem_t x = StackPop(&stk_verifications_levels, &err);
-    assert(!err);
-    assert(CHECK_EQUAL(value, x));
-    x = StackPop(&stk_verifications_levels, &err);
-    assert(err);
-    StackDump(&stk_verifications_levels);
-
-    StackDestructor(&stk_verifications_levels);
-}
-
-void test_stack_verifications_levels()
-{
-    test_stack_ver_level(0);
-    test_stack_ver_level(1);
-    test_stack_ver_level(2);
 }
 
 struct TestStack
@@ -127,13 +97,13 @@ void test_stack_boundaries()
 {
     TestStack tester = {};
     Stack_t *victim = &tester.victim;
-    StackConstruct(victim, 2, "debug/4debug_boundaries.log", "w");
+    StackConstruct(victim, "debug/3debug_boundaries.log", "w");
     StackPush(victim, 10); 
     StackPush(victim, 20);
     StackPush(victim, 30);
 
     int i = 0;
-    test_stack_boundaries_ptr(victim, (int *)&victim->size);
+    test_stack_boundaries_ptr(victim, (int *)&victim->size); 
     test_stack_boundaries_ptr(victim, (int *)&victim->max_size);
     test_stack_boundaries_ptr(victim, (int *)&victim->data);
     test_stack_boundaries_ptr(victim, (int *)victim->data);
@@ -151,12 +121,11 @@ void test_stack_strong()
 {
     TestStack tester = {};
     Stack_t *victim = &tester.victim;
-    StackConstruct(victim, 2, "debug/5debug_strong.log", "w");
+    StackConstruct(victim, "debug/4debug_strong.log", "w");
     StackPush(victim, 10); 
     StackPush(victim, 20);
     StackPush(victim, 30);
 
-    int i = 0;
     int *ptr = tester.exec1;
     while (ptr++ != tester.exec2)
     {
@@ -168,10 +137,10 @@ void test_stack_strong()
 
 void test_stack()
 {
+    printf("Tests started\n");
     test_stack_ordinary();
     test_stack_growth();
     test_stack_big_data();
-    test_stack_verifications_levels();
     test_stack_boundaries();
     test_stack_strong();
     printf("Tests succesfully completed\n");

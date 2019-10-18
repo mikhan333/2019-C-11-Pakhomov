@@ -3,7 +3,7 @@ TARGET = StackTests
 
 SRCS = src/$(TARGET).cpp lib/Stack.cpp
 OBJS = $(SRCS:.cpp=.o)
-DEBUG_FILES = *.log debug/*.log
+DEBUG_FILES = *.log debug/*
 
 CC=g++
 CFLAGS = -c -Wall

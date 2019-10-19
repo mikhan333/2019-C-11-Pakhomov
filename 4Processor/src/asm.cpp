@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include <cassert>
-#include "const.hpp"
+#include "../lib/const.hpp"
 
 int check_command(const char *stack_command)
 {
@@ -70,10 +70,8 @@ int main(int argc, char *argv[])
     printf("This is a assembler programm\n"
            "from file asm.cpp\n"
            "Created by Mikhail Pakhomov\n\n");
-    char default_path_in[] = "test.txt";
-    char default_path_out[] = "test.bin";
-    char *path_file_in = default_path_in;
-    char *path_file_out = default_path_out;
+    const char *path_file_in = "test.txt";
+    const char *path_file_out = "build/test_asm.bin";
     if (argc == 3)
     {
         path_file_in = argv[1];
@@ -94,8 +92,8 @@ int main(int argc, char *argv[])
     }
 
     char stack_command[20], stack_comment[256];
-    short result, argument;
-    int number;
+    Command_t result, argument;
+    Argument_t number;
     while (fscanf(file_in, "%s", stack_command) != EOF)
     {
         result = check_command(stack_command);
@@ -115,8 +113,8 @@ int main(int argc, char *argv[])
             {
             case ARG_NUMBER:
                 number = atoi(stack_command);
-                fwrite(&result, sizeof(short), 1, file_out);
-                fwrite(&number, sizeof(int), 1, file_out);
+                fwrite(&result, sizeof(Command_t), 1, file_out);
+                fwrite(&number, sizeof(Argument_t), 1, file_out);
                 break;
             case ARG_BAD_VALUE:
                 printf("ERROR : incorrect argument : %s", stack_command);
@@ -124,29 +122,29 @@ int main(int argc, char *argv[])
                 break;
             default:
                 result = CMD_PUSH_REG;
-                fwrite(&result, sizeof(short), 1, file_out);
-                fwrite(&argument, sizeof(short), 1, file_out);
+                fwrite(&result, sizeof(Command_t), 1, file_out);
+                fwrite(&argument, sizeof(Command_t), 1, file_out);
                 break;
             }
             break;
         case CMD_POP:
             if (fscanf(file_in, "%s", stack_command) == EOF)
             {
-                fwrite(&result, sizeof(short), 1, file_out);
+                fwrite(&result, sizeof(Command_t), 1, file_out);
                 break;
             }
             argument = check_argument(stack_command);
             if (argument == ARG_NUMBER ||
                 argument == ARG_BAD_VALUE)
             {
-                fwrite(&result, sizeof(short), 1, file_out);
+                fwrite(&result, sizeof(Command_t), 1, file_out);
                 fseek(file_in, -sizeof(char) * strlen(stack_command), SEEK_CUR);
             }
             else
             {
                 result = CMD_POP_REG;
-                fwrite(&result, sizeof(short), 1, file_out);
-                fwrite(&argument, sizeof(short), 1, file_out);
+                fwrite(&result, sizeof(Command_t), 1, file_out);
+                fwrite(&argument, sizeof(Command_t), 1, file_out);
                 printf(" %s", stack_command);
             }
             break;
@@ -158,7 +156,7 @@ int main(int argc, char *argv[])
             fgets(stack_comment, 255, file_in);
             break;
         default:
-            fwrite(&result, sizeof(short), 1, file_out);
+            fwrite(&result, sizeof(Command_t), 1, file_out);
             break;
         }
         printf("\n");

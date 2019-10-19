@@ -1,4 +1,7 @@
 
+typedef short Command_t;
+typedef int Argument_t;
+
 enum StackCommands
 {
     CMD_BAD_VALUE = 1,
